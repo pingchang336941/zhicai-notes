@@ -103,7 +103,9 @@ async function go(){
     localStorage.setItem(KEY, JSON.stringify({k: k, pv: pv, exp: Date.now() + TTL}));
   }catch(e){}
 
-  const u = data.url + (data.url.indexOf('?') >= 0 ? '&' : '?') + 'k=' + encodeURIComponent(k);
+  // 带时间戳：每次跳转都是新 URL，手机浏览器不会拿旧缓存糊弄
+  const u = data.url + (data.url.indexOf('?') >= 0 ? '&' : '?')
+    + 'k=' + encodeURIComponent(k) + '&t=' + Date.now();
   location.replace(u);
 }
 
