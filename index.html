@@ -15,33 +15,69 @@
  @keyframes pulse{0%,100%{opacity:.2}50%{opacity:1}}
  h1{font-size:17px;font-weight:650;margin:0 0 12px}
  p{color:#8a857c;font-size:13.5px;line-height:1.75;margin:0}
- button{margin-top:20px;padding:10px 24px;border:1px solid #e5e1d8;border-radius:9px;
+ input{width:100%;height:44px;margin-top:14px;padding:0 14px;border:1px solid #e5e1d8;
+  border-radius:9px;font-size:16px;background:#fff;color:#2b2b2b;outline:none;text-align:center;
+  box-sizing:border-box}
+ input:focus{border-color:#2f6f5e}
+ button{margin-top:14px;padding:11px 26px;border:1px solid #e5e1d8;border-radius:9px;
   background:#fff;color:#2b2b2b;font-size:14px;cursor:pointer}
+ button.primary{background:#2f6f5e;border-color:#2f6f5e;color:#fff;width:100%}
  .hide{display:none}
 </style>
 </head>
 <body>
 <div class="box">
-  <h1><span class="dot"></span><span id="t">正在打开知采笔记</span></h1>
+  <h1><span class="dot" id="dot"></span><span id="t">正在打开知采笔记</span></h1>
   <p id="m">正在读取最新地址…</p>
+
+  <div id="ask" class="hide">
+    <input id="k" placeholder="输入访问口令" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button class="primary" onclick="saveK()">记住并进入</button>
+  </div>
+
   <button id="retry" class="hide" onclick="go()">重试</button>
 </div>
 <script>
+const KEY = 'zc-k';
+
+function saveK(){
+  const v = (document.getElementById('k').value || '').trim();
+  if(!v) return;
+  localStorage.setItem(KEY, v);
+  go();
+}
+
+function show(step, title, msg){
+  document.getElementById('t').textContent = title;
+  document.getElementById('m').innerHTML = msg;
+  document.getElementById('ask').classList.toggle('hide', step !== 'ask');
+  document.getElementById('retry').classList.toggle('hide', step !== 'off');
+  document.getElementById('dot').style.background = step === 'off' ? '#b4402f' : '#2f6f5e';
+}
+
 async function go(){
-  document.getElementById('retry').classList.add('hide');
-  document.getElementById('m').textContent = '正在读取最新地址…';
+  show('loading', '正在打开知采笔记', '正在读取最新地址…');
+  let data = null;
   try{
     const r = await fetch('./latest.json?t=' + Date.now(), {cache:'no-store'});
-    const j = await r.json();
-    if(j && j.url && j.url.length > 10){ location.replace(j.url); return; }
-    throw new Error('empty');
-  }catch(e){
-    document.getElementById('t').textContent = '电脑上的笔记服务没开';
-    document.getElementById('m').innerHTML =
-      '出门前在这台电脑上双击「出门模式.bat」，<br>然后回到这里点重试。';
-    document.getElementById('retry').classList.remove('hide');
+    data = await r.json();
+  }catch(e){}
+
+  if(!data || !data.url || data.url.length < 10){
+    show('off', '电脑上的笔记服务没开',
+      '出门前在这台电脑上双击「出门模式.bat」，<br>等一分钟再点重试。');
+    return;
   }
+
+  const k = localStorage.getItem(KEY);
+  if(!k){
+    show('ask', '第一次使用', '输入一次访问口令，以后就不会再问。');
+    return;
+  }
+  const u = data.url + (data.url.indexOf('?') >= 0 ? '&' : '?') + 'k=' + encodeURIComponent(k);
+  location.replace(u);
 }
+
 go();
 </script>
 </body>
