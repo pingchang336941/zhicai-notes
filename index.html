@@ -7,8 +7,8 @@
 <title>知采笔记</title>
 <style>
  html,body{overflow-x:hidden}
- body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;
-  background:#faf9f7;color:#2b2b2b;text-align:center;padding:0 16px;box-sizing:border-box;
+ body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:#faf9f7;color:#2b2b2b;text-align:center;padding:24px 16px;box-sizing:border-box;
   font-family:"Segoe UI","Microsoft YaHei",system-ui,-apple-system,sans-serif}
  .box{width:340px;max-width:100%;box-sizing:border-box}
  .dot{width:10px;height:10px;border-radius:50%;background:#2f6f5e;display:inline-block;
@@ -32,7 +32,8 @@
   <p id="m">正在读取最新地址…</p>
 
   <div id="ask" class="hide">
-    <input id="k" placeholder="输入访问口令" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <input id="k" type="password" inputmode="numeric" placeholder="输入访问口令"
+      autocomplete="off" autocapitalize="off" spellcheck="false">
     <button class="primary" onclick="saveK()">记住并进入</button>
   </div>
 
@@ -40,11 +41,29 @@
 </div>
 <script>
 const KEY = 'zc-k';
+const DAYS = 10;
+const TTL = DAYS * 24 * 60 * 60 * 1000;
+
+// 从笔记页点「重新输入口令」回来时，把记错的口令清掉
+if(location.hash === '#reset'){
+  try{ localStorage.removeItem(KEY); }catch(e){}
+  try{ history.replaceState(null, '', location.pathname); }catch(e){}
+}
+
+function loadSaved(pv){
+  try{
+    const o = JSON.parse(localStorage.getItem(KEY) || '{}');
+    if(!o || !o.k) return '';
+    if(pv && o.pv !== pv) return '';                 // 口令换过了，旧的不作数
+    if(!o.exp || Date.now() > o.exp) return '';      // 超过 10 天没打开
+    return o.k;
+  }catch(e){ return ''; }
+}
 
 function saveK(){
   const v = (document.getElementById('k').value || '').trim();
   if(!v) return;
-  localStorage.setItem(KEY, v);
+  window.__k = v;
   go();
 }
 
@@ -58,6 +77,7 @@ function show(step, title, msg){
 
 async function go(){
   show('loading', '正在打开知采笔记', '正在读取最新地址…');
+
   let data = null;
   try{
     const r = await fetch('./latest.json?t=' + Date.now(), {cache:'no-store'});
@@ -70,11 +90,19 @@ async function go(){
     return;
   }
 
-  const k = localStorage.getItem(KEY);
+  const pv = data.pv || '';
+  // 刚手输的口令优先，其次用本地记住的
+  let k = window.__k || loadSaved(pv);
   if(!k){
-    show('ask', '第一次使用', '输入一次访问口令，以后就不会再问。');
+    show('ask', '输入访问口令', '10 天内打开过就不用再输。');
     return;
   }
+
+  // 记住 / 续期：用一次就往后推 10 天
+  try{
+    localStorage.setItem(KEY, JSON.stringify({k: k, pv: pv, exp: Date.now() + TTL}));
+  }catch(e){}
+
   const u = data.url + (data.url.indexOf('?') >= 0 ? '&' : '?') + 'k=' + encodeURIComponent(k);
   location.replace(u);
 }
