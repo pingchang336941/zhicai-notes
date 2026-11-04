@@ -6,10 +6,11 @@
 <meta name="theme-color" content="#faf9f7">
 <title>知采笔记</title>
 <style>
+ html,body{overflow-x:hidden}
  body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;
-  background:#faf9f7;color:#2b2b2b;text-align:center;
+  background:#faf9f7;color:#2b2b2b;text-align:center;padding:0 16px;box-sizing:border-box;
   font-family:"Segoe UI","Microsoft YaHei",system-ui,-apple-system,sans-serif}
- .box{width:min(340px,86vw)}
+ .box{width:340px;max-width:100%;box-sizing:border-box}
  .dot{width:10px;height:10px;border-radius:50%;background:#2f6f5e;display:inline-block;
   margin-right:8px;vertical-align:middle;animation:pulse 1.2s ease-in-out infinite}
  @keyframes pulse{0%,100%{opacity:.2}50%{opacity:1}}
