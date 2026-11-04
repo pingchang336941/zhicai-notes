@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#faf9f7">
+<title>知采笔记</title>
+<style>
+ body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;
+  background:#faf9f7;color:#2b2b2b;text-align:center;
+  font-family:"Segoe UI","Microsoft YaHei",system-ui,-apple-system,sans-serif}
+ .box{width:min(340px,86vw)}
+ .dot{width:10px;height:10px;border-radius:50%;background:#2f6f5e;display:inline-block;
+  margin-right:8px;vertical-align:middle;animation:pulse 1.2s ease-in-out infinite}
+ @keyframes pulse{0%,100%{opacity:.2}50%{opacity:1}}
+ h1{font-size:17px;font-weight:650;margin:0 0 12px}
+ p{color:#8a857c;font-size:13.5px;line-height:1.75;margin:0}
+ button{margin-top:20px;padding:10px 24px;border:1px solid #e5e1d8;border-radius:9px;
+  background:#fff;color:#2b2b2b;font-size:14px;cursor:pointer}
+ .hide{display:none}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1><span class="dot"></span><span id="t">正在打开知采笔记</span></h1>
+  <p id="m">正在读取最新地址…</p>
+  <button id="retry" class="hide" onclick="go()">重试</button>
+</div>
+<script>
+async function go(){
+  document.getElementById('retry').classList.add('hide');
+  document.getElementById('m').textContent = '正在读取最新地址…';
+  try{
+    const r = await fetch('./latest.json?t=' + Date.now(), {cache:'no-store'});
+    const j = await r.json();
+    if(j && j.url && j.url.length > 10){ location.replace(j.url); return; }
+    throw new Error('empty');
+  }catch(e){
+    document.getElementById('t').textContent = '电脑上的笔记服务没开';
+    document.getElementById('m').innerHTML =
+      '出门前在这台电脑上双击「出门模式.bat」，<br>然后回到这里点重试。';
+    document.getElementById('retry').classList.remove('hide');
+  }
+}
+go();
+</script>
+</body>
+</html>
